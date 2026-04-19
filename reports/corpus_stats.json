@@ -1,0 +1,29 @@
+{
+  "num_docs": 1460,
+  "missing_tags": {
+    "title": 0,
+    "author": 0,
+    "text": 0
+  },
+  "text_length_chars": {
+    "min": 52,
+    "max": 3800,
+    "mean": 774.99,
+    "median": 716.0,
+    "p90": 1277.2,
+    "p95": 1480.15,
+    "distribution_bins": {
+      "0-199": 52,
+      "200-499": 324,
+      "500-999": 732,
+      "1000-1999": 336,
+      "2000+": 16
+    }
+  },
+  "token_count": {
+    "avg_tokens": 119.18,
+    "median_tokens": 110.0,
+    "p90_tokens": 198.0,
+    "p95_tokens": 231.0
+  }
+}
