@@ -62,7 +62,7 @@ def evaluate_pipeline():
             run.name = run_name
         
         # We compute mrr and precision@10 (P@10)
-        metrics = evaluate(qrels, run, ["mrr", "precision@10"])
+        metrics = evaluate(qrels, run, ["mrr", "precision@10"], make_comparable=True)
         results[run_name] = {
             "MRR": metrics["mrr"],
             "P@10": metrics["precision@10"]

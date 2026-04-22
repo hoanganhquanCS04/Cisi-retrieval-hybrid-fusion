@@ -66,15 +66,15 @@ def main():
         if not candidates:
             continue
             
-        # Cross-Encoder
+        # Cross-Encoder (tăng tốc bằng batch_size lớn cho RTX 4090)
         start_time = time.time()
-        ce_ranked = ce_reranker.rerank(q_text, candidates)
+        ce_ranked = ce_reranker.rerank(q_text, candidates, batch_size=256)
         ce_total_time += (time.time() - start_time)
         ce_final_results[str(qid)] = [{"doc_id": d["doc_id"], "score": d["ce_score"]} for d in ce_ranked]
         
-        # MonoT5
+        # MonoT5 (tăng tốc bằng batch_size lớn cho RTX 4090)
         start_time = time.time()
-        t5_ranked = monot5_reranker.rerank(q_text, candidates)
+        t5_ranked = monot5_reranker.rerank(q_text, candidates, batch_size=64)
         t5_total_time += (time.time() - start_time)
         monot5_final_results[str(qid)] = [{"doc_id": d["doc_id"], "score": d["monot5_score"]} for d in t5_ranked]
 

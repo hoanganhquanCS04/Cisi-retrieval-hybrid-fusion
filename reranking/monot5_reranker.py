@@ -11,7 +11,9 @@ class MonoT5Reranker:
             model_name_or_path = "castorini/monot5-base-msmarco"
             
         self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
-        self.model = T5ForConditionalGeneration.from_pretrained(model_name_or_path).to(self.device).eval()
+        # Sử dụng torch.bfloat16 hoặc float16 để giảm dung lượng RAM, chạy cực nhanh trên RTX 4090
+        dtype = torch.bfloat16 if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else torch.float32
+        self.model = T5ForConditionalGeneration.from_pretrained(model_name_or_path, torch_dtype=dtype).to(self.device).eval()
         
         # In MonoT5, "true" vs "false" token log_prob is used
         # Find token id for " true" (depends on tokenizer, ms-marco T5 uses " true" = 1176, " false" = 6136 typically)
