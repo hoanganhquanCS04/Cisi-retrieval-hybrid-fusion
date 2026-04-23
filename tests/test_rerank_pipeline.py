@@ -20,8 +20,12 @@ def load_data():
         print("Found hybrid_top100.json! Using Hybrid ranking as candidate list.")
         with open('data/hybrid_top100.json', 'r', encoding='utf-8') as f:
             candidate_results = json.load(f)
+    elif os.path.exists('data/dense_top100.json'):
+        print("No hybrid_top100.json found. Found dense_top100.json! Using Dense ranking as candidate list.")
+        with open('data/dense_top100.json', 'r', encoding='utf-8') as f:
+            candidate_results = json.load(f)
     else:
-        print("No hybrid_top100.json found. Falling back to bm25_top100.json.")
+        print("No hybrid/dense config found. Falling back to bm25_top100.json.")
         with open('data/bm25_top100.json', 'r', encoding='utf-8') as f:
             candidate_results = json.load(f)
         

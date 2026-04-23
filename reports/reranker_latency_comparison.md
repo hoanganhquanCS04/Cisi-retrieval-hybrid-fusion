@@ -2,5 +2,5 @@
 
 | Model | Avg Latency/Query (ms) |
 |---|---|
-| Cross-Encoder | 118.08 |
-| MonoT5 | 250.86 |
+| Cross-Encoder | 116.36 |
+| MonoT5 | 255.02 |

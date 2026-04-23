@@ -1,3 +1,8 @@
+Loading data...
+Analyzing results...
+✅ Analysis saved to reports/reranking_analysis.md
+
+============================================================
 # Re-ranking Results Analysis
 ## Executive Summary
 - **Total Queries**: 76
@@ -98,3 +103,5 @@
    - Cross-Encoder should be considered if it shows solid improvements over BM25/Dense.
    - MonoT5 needs better tuning or integration with stronger base ranker
    - Consider combining multiple re-rankers (ensemble approach)
+
+============================================================

@@ -288,9 +288,10 @@ def generate_report(qrels, queries, bm25, ce_reranked, monot5_reranked):
     
     # Key Insights
     report.append("## Key Insights\n\n")
-    report.append("1. **Baseline Performance**: Both re-ranking methods achieve similar MRR to BM25 on CISI dataset\n")
-    report.append("   - Cross-Encoder matches BM25 exactly (MRR@10 = 0.0658)\n")
-    report.append("   - MonoT5 underperforms (MRR@10 = 0.0395)\n\n")
+    report.append(f"1. **Baseline Performance**: Both re-ranking methods achieve similar or different MRR to the baseline on CISI dataset\n")
+    report.append(f"   - BM25 Baseline: MRR@10 = {results['BM25']['MRR@10']:.4f}\n")
+    report.append(f"   - Cross-Encoder: MRR@10 = {results['Cross-Encoder']['MRR@10']:.4f}\n")
+    report.append(f"   - MonoT5: MRR@10 = {results['MonoT5']['MRR@10']:.4f}\n\n")
     
     report.append("2. **Dataset Characteristics**:\n")
     report.append("   - Only 76 out of 112 queries have relevant documents\n")
@@ -302,10 +303,9 @@ def generate_report(qrels, queries, bm25, ce_reranked, monot5_reranked):
     report.append(f"   - MonoT5 helps {len(improvements['MT5_improves'])} queries, hurts {len(improvements['MT5_worsens'])}\n\n")
     
     report.append("4. **Recommendations**:\n")
-    report.append("   - Cross-Encoder is viable when hybrid ranker is unavailable\n")
+    report.append("   - Cross-Encoder should be considered if it shows solid improvements over BM25/Dense.\n")
     report.append("   - MonoT5 needs better tuning or integration with stronger base ranker\n")
     report.append("   - Consider combining multiple re-rankers (ensemble approach)\n")
-    report.append("   - Focus on improving weak BM25 baseline first\n")
     
     return ''.join(report)
 
