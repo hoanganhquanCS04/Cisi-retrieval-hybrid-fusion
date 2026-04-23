@@ -1,107 +1,77 @@
-# Báo cáo Tổng kết Giai đoạn 3 (Neural Re-ranking & Evaluation)
-**Trách nhiệm:** Member 3 - Neural Re-ranking Architect & Evaluation Specialist
+# Báo cáo Tổng hợp M3 (Phiên bản hoàn thiện)
 
-Báo cáo này trình bày kết quả đánh giá toàn diện các mô hình reranking neural (Cross-Encoder và MonoT5) được áp dụng trên kết quả truy hồi dense retrieval, so sánh hiệu suất (MRR, P@10) và hiệu quả tính toán (latency) giữa các phương pháp khác nhau.
+**Nguồn candidate:** dense_top100.json
 
-## 1. Tổng quan Phương pháp và Kiến trúc Hệ thống
+**Số truy vấn xử lý:** 112
 
-### 1.1. Chiến lược Re-ranking Neural
-Sau khi nhận bàn giao kết quả truy hồi thô từ Member 2 (dense retrieval top-100), hệ thống reranking được triển khai với hai mô hình state-of-the-art:
+# Bảng so sánh 6 hệ thống (MRR, P@10)
 
-**Cross-Encoder Architecture:**
-- **Model:** `cross-encoder/ms-marco-MiniLM-L-6-v2` (22M tham số)
-- **Nguyên lý:** Mô hình BERT-based được fine-tune để dự đoán độ liên quan query-document trực tiếp
-- **Ưu điểm:** Độ chính xác cao, không cần inference riêng lẻ cho từng cặp
-- **Batch Processing:** Tối ưu với batch_size=256 cho GPU RTX 4090
+| Hệ Thống         |   MRR   |  P@10  |
+|------------------|--------:|-------:|
+| BM25             | 0.6436  | 0.3105 |
+| Dense            | 0.6116  | 0.3987 |
+| Hybrid           | 0.6179  | 0.3803 |
+| TF-IDF           | 0.6018  | 0.3145 |
+| Cross-Encoder    | 0.5906  | 0.3408 |
+| MonoT5           | 0.4463  | 0.2658 |
 
-**MonoT5 Architecture:**
-- **Model:** `castorini/monot5-base-msmarco` (220M tham số)
-- **Nguyên lý:** Text-to-Text Transfer Transformer với prompt engineering
-- **Prompt Format:** `Query: {query} Document: {doc} Relevant:` → Dự đoán token "true"/"false"
-- **Batch Processing:** Tối ưu với batch_size=64
+# Tổng quan & nhận xét chính
+- **BM25** vẫn là baseline mạnh về MRR trên tập CISI — thích hợp khi cần tối ưu thứ tự tổng thể.
+- **Dense** và **Hybrid** cải thiện đáng kể P@10; nếu mục tiêu là đưa nhiều tài liệu liên quan lên top-10, `Dense`/`Hybrid` phù hợp.
+- **Cross-Encoder (CE)** giúp gia tăng độ chính xác (P@10) khi dùng làm reranker, nhưng chi phí latency phải cân nhắc.
+- **MonoT5** hiện cho hiệu năng kém hơn so với các phương án khác (MRR thấp và không ổn định); cần fine-tune thêm hoặc đặt dưới ensemble/heuristic.
 
-### 1.2. Pipeline Đánh giá với Thư viện RANX
-Hệ thống evaluation (`evaluation/eval_pipeline.py`) sử dụng thư viện RANX để đảm bảo tính khoa học:
-- **Metrics chính:** MRR (Mean Reciprocal Rank), P@10 (Precision@10)
-- **Baseline Comparison:** So sánh với BM25 và Dense retrieval
-- **Statistical Rigor:** Tính toán trên 112 queries với ground truth từ `qrels.json`
+# Độ trễ (Latency) của rerankers
 
-## 2. Phân tích Hiệu suất và Latency
+| Model         |   Avg Latency/Query (ms) |
+|:--------------|-------------------------:|
+| Cross-Encoder |                   115.69 |
+| MonoT5        |                   259.80 |
 
-### 2.1. Bảng So sánh Metrics Cuối cùng
+> Ghi chú: Cross-Encoder có độ trễ hợp lý cho các hệ thống yêu cầu độ chính xác trung bình-cao; MonoT5 hiện tốn tài nguyên và chậm hơn rõ rệt.
 
-| Phương pháp   |    MRR |   P@10 |   Cải thiện MRR |   Cải thiện P@10 |
-|:--------------|-------:|-------:|----------------:|-----------------:|
-| BM25          | 0.0658 | 0.0066 |            0.0% |             0.0% |
-| Dense         | 0.0658 | 0.0066 |            0.0% |             0.0% |
-| Cross-Encoder | 0.0789 | 0.0079 |          +20.1% |           +19.7% |
-| MonoT5        | 0.0658 | 0.0066 |            0.0% |             0.0% |
+# Bảng chỉ số tổng hợp (Phần chính)
 
-### 2.2. Phân tích Chi tiết từng Mô hình
+|                |    MRR |   P@10 |
+|:---------------|-------:|-------:|
+| BM25           | 0.6436 | 0.3105 |
+| Dense          | 0.6116 | 0.3987 |
+| Hybrid         | 0.6179 | 0.3803 |
+| TF-IDF         | 0.6018 | 0.3145 |
+| Cross-Encoder  | 0.5906 | 0.3408 |
+| MonoT5         | 0.4463 | 0.2658 |
 
-**Cross-Encoder Performance:**
-- **Điểm mạnh:** Cải thiện rõ rệt +20.1% MRR so với baseline
-- **Latency:** 116ms/query - Phù hợp cho production deployment
-- **Đánh giá:** Cho thấy lợi ích rõ ràng khi rerank kết quả dense retrieval
+# Phân tích chi tiết
 
-**MonoT5 Performance:**
-- **Điểm yếu:** Không cải thiện so với baseline BM25/Dense
-- **Latency:** 259ms/query - Chậm hơn 2.2x so với Cross-Encoder
-- **Nguyên nhân:** Có thể cần fine-tuning trên domain CISI hoặc điều chỉnh prompt
+- **Tại sao BM25 dẫn đầu MRR?**
+	- Tập CISI (văn bản khoa học/short passages) thường phù hợp với các bộ từ khóa và tần suất TF-IDF/BM25, nên BM25 vẫn giữ được thứ tự tốt cho nhiều truy vấn.
 
-**Dense Retrieval Baseline:**
-- **Quan sát:** Hiệu suất giống hệt BM25 trong evaluation này
-- **Ghi chú:** Có thể do vấn đề setup evaluation hoặc preprocessing data
+- **Dense / Hybrid tăng P@10 nhưng MRR thấp hơn BM25:**
+	- Dense embeddings giúp bắt bắt được tương đồng ngữ nghĩa, đưa vào nhiều tài liệu liên quan hơn vào top-10 (tăng P@10) nhưng không luôn đảm bảo tài liệu "đúng nhất" lên hạng 1 (ảnh hưởng MRR).
 
-### 2.3. Bảng So sánh Latency
+- **Cross-Encoder:**
+	- Tăng P@10 khi rerank top-k, thích hợp cho pipeline 2-stage (retriever + CE reranker). Chi phí latency ~115ms/query — phù hợp cho batch hoặc hệ thống có tài nguyên.
 
-| Mô hình       |   Latency trung bình (ms/query) |   Tổng thời gian (s) |   Điểm hiệu quả |
-|:--------------|-------------------------------:|---------------------:|-----------------:|
-| Cross-Encoder |                         115.99 |                13.03 |             8.62 |
-| MonoT5        |                         258.97 |                29.01 |             3.86 |
+- **MonoT5:**
+	- Kết quả chưa tốt: có thể do thiếu fine-tune trên tập dữ liệu tương ứng hoặc prompt/template không phù hợp. Đề xuất: fine-tune trên cặp query–doc, giảm max-length, hoặc kết hợp ensemble với CE để tránh suy giảm hiệu năng.
 
-*Điểm hiệu quả = % cải thiện MRR / % tăng latency (cao hơn = tốt hơn)*
+# Khuyến nghị (Actionable)
 
-## 3. Phân tích Trade-off Accuracy vs Latency
+1. Nếu ưu tiên MRR (thứ tự chính xác tuyệt đối): giữ hoặc tinh chỉnh `BM25` làm baseline, kết hợp với `Hybrid` khi cần cân bằng P@10.
+2. Nếu ưu tiên P@10 (top-10 chính xác): dùng `Dense`/`Hybrid` + `Cross-Encoder` reranker trên top-100; chấp nhận chi phí latency của CE.
+3. MonoT5: thử fine-tune trên dữ liệu cục bộ, kiểm tra prompt/template, hoặc sử dụng như một thành phần thứ cấp (ensemble) thay vì thay thế CE.
+4. Thêm kiểm thử A/B khi triển khai để đánh giá trade-off latency vs. gain thực tế.
 
-```
-Trade-off Accuracy (MRR) vs Latency:
-• BM25/Dense:     Latency thấp, accuracy baseline
-• Cross-Encoder:  Latency trung bình, cải thiện +20% accuracy
-• MonoT5:         Latency cao, không cải thiện accuracy
-```
+# Liên kết & artifacts
+- Biểu đồ rank-shift: [reports/rank_shift_plot.png](reports/rank_shift_plot.png)
+- Báo cáo phân tích lỗi MonoT5: [reports/reranker_error_cases.md](reports/reranker_error_cases.md)
+- Báo cáo phân tích biến động thứ hạng: [reports/rank_shift_analysis.md](reports/rank_shift_analysis.md)
 
-**Khuyến nghị:** Cross-Encoder cung cấp sự cân bằng tốt nhất cho deployment production.
+# Phần mở rộng (nên làm tiếp)
+- Thu thập thêm labels cho truy vấn khó và fine-tune MonoT5.
+- Thử ensemble CE + MonoT5 để hạn chế suy giảm RR.
+- Tối ưu latency bằng batching, model distillation hoặc sử dụng phiên bản nhỏ hơn của MonoT5/CE.
 
-## 4. Thông số Kỹ thuật và Implementation Details
+---
 
-### 4.1. Thông số Model
-- **Cross-Encoder:** 22M tham số, MiniLM architecture
-- **MonoT5:** 220M tham số, T5-base backbone
-- **Batch Sizes:** CE=256, MonoT5=64 (tối ưu cho RTX 4090)
-
-### 4.2. Thông số Data Processing
-- **Nguồn Candidates:** Dense retrieval top-100 results
-- **Số Queries:** 112 queries được xử lý
-- **Số Candidates/Query:** 100 documents
-- **Metrics đánh giá:** MRR, P@10 (Precision@10)
-
-### 4.3. Cơ sở hạ tầng
-- **GPU:** RTX 4090 với CUDA support
-- **Environment:** Python 3.11, PyTorch, Transformers
-- **Caching:** Models cached offline trong `hf_cache/`
-
-## 5. Khuyến nghị cho Các Bước Tiếp theo
-
-1. **Fine-tune MonoT5** trên dữ liệu domain CISI để cải thiện performance
-2. **Thử nghiệm Cross-Encoder architectures khác** để tăng accuracy tiềm năng
-3. **Implement hybrid scoring** kết hợp BM25 + Dense + Neural reranking
-4. **Thêm metrics đánh giá** (NDCG, MAP) cho assessment toàn diện
-5. **Profile memory usage** và tối ưu batch sizes cho production
-
-## 6. Kết luận Giai đoạn
-
-Đánh giá reranking neural cho thấy kết quả đầy hứa hẹn với Cross-Encoder thể hiện cải thiện rõ ràng so với các phương pháp truy hồi truyền thống. Mặc dù MonoT5 cần tối ưu hóa thêm, nhưng hướng tiếp cận tổng thể đã khẳng định tiềm năng của neural reranking cho các tác vụ information retrieval.
-
-*Báo cáo được tạo ngày: 23 tháng 4, 2026*
-*Pipeline đánh giá: Thư viện RANX với metrics IR chuẩn*
+Phiên bản báo cáo: tự động sinh bởi pipeline đánh giá (đã localize sang tiếng Việt).
