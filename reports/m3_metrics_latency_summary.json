@@ -1,0 +1,25 @@
+{
+  "candidate_source": "dense_top100.json",
+  "num_queries": {
+    "total_candidates": 112,
+    "reranked": 112
+  },
+  "latency_ms_per_query": {
+    "cross_encoder": 115.98918693406242,
+    "monot5": 258.9736665998186
+  },
+  "accuracy": {
+    "Cross-Encoder": {
+      "MRR": 0.07894736842105263,
+      "P@10": 0.007894736842105263
+    },
+    "MonoT5": {
+      "MRR": 0.06578947368421052,
+      "P@10": 0.006578947368421052
+    },
+    "Dense-Baseline": {
+      "MRR": 0.06578947368421052,
+      "P@10": 0.006578947368421052
+    }
+  }
+}
