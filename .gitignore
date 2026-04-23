@@ -22,3 +22,7 @@ venv.bak/
 .gemini/
 scratch/
 CISI_data/
+
+# Models and cache
+hf_cache/
+models/hf_cache/
